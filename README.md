@@ -1,4 +1,7 @@
 # CourseIQ
 
-Team Members:
+## Team Members
 - Renold Thomas (Developer)
+
+
+## Project Purpose
