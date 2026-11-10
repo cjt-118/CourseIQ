@@ -20,6 +20,10 @@ We plan to build the system as a web application using a standard stack consisti
 ### Generative AI Usage
 ChatGPT was used to generate the initial React frontend for the CourseIQ application, including the course discovery homepage, sample course data, styling, and configuration files. It was also used to assist with debugging and resolving a React import error. The generated code was tested locally before being committed to the repository.
 
+## Our Architecture
+![Subsystem Decomposition](images/subsystem-decomposition.drawio.png)
+![Deployment Diagram](images/deployment-diagram.drawio.png)
+
 # CourseIQ — Sprint 4 React demo
 
 Standalone React/Vite course-discovery homepage, intended to be integrated into the team's three-tier project skeleton.
