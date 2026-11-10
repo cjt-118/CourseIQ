@@ -17,7 +17,6 @@ difficulty, grading, assignments, exams, etc.
 ## Project Plan
 We plan to build the system as a web application using a standard stack consisting of React for the frontend, Node.js with Express for our backend middleware, and PostgreSQL (or a similar relational database) to securely store course and review data. Currently, the one thing we are unsure about is how exactly we will integrate the university's existing SAML Single Sign-On (SSO) system for authentication and how to gain access to the external course catalog API to pull official prerequisite and scheduling data. 
 
-<<<<<<< HEAD
 # Techstack
 | Layer | Technology |
 | :---: | :---: |
@@ -25,7 +24,7 @@ We plan to build the system as a web application using a standard stack consisti
 | Frontend | React (JavaScript, HTML/CSS) |
 | Backend | Flask (Python) |
 | Database | PostgreSQL |
-=======
+
 ### Generative AI Usage
 ChatGPT was used to generate the initial React frontend for the CourseIQ application, including the course discovery homepage, sample course data, styling, and configuration files. It was also used to assist with debugging and resolving a React import error. The generated code was tested locally before being committed to the repository.
 
@@ -72,4 +71,3 @@ Open the local URL shown in the terminal (normally http://localhost:5173).
 - Actual university course or instructor information
 
 All displayed data is fictional demonstration content. This is not a production application.
->>>>>>> ce8a58682b6ca235ccd472d0ab602ae03cb12fea
