@@ -1,17 +1,41 @@
-import React, { useMemo, useState } from 'react';
-import { courses } from './data';
+import React, { useEffect, useMemo, useState } from 'react';
+import { supabase } from './supabaseClient';
 import './styles.css';
 
 export default function App() {
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [query, setQuery] = useState('');
   const [department, setDepartment] = useState('All departments');
   const [selected, setSelected] = useState(null);
-  const departments = ['All departments', ...new Set(courses.map(c => c.department))];
+
+  useEffect(() => {
+    let ignore = false;
+    async function loadCourses() {
+      const { data, error } = await supabase
+        .from('courses')
+        .select('*')
+        .order('code');
+      if (ignore) return;
+      if (error) setError(error.message);
+      else setCourses(data);
+      setLoading(false);
+    }
+    loadCourses();
+    return () => { ignore = true };
+  }, []);
+
+  const departments = useMemo(
+    () => ['All departments', ...new Set(courses.map(c => c.department))],
+    [courses]
+  );
+
   const filtered = useMemo(() => courses.filter(c => {
     const q = query.trim().toLowerCase();
     return (department === 'All departments' || c.department === department) &&
       [c.code, c.title, c.professor].some(value => value.toLowerCase().includes(q));
-  }), [query, department]);
+  }), [courses, query, department]);
   const reset = () => { setQuery(''); setDepartment('All departments'); setSelected(null) };
   return <>
     <header className="topbar"><div className="container nav"><button className="brand" onClick={reset} aria-label="CourseIQ home"><span className="brand-icon">▣</span> CourseIQ</button><span className="nav-label">Course Discovery · Sprint 4 Demo</span></div></header>
