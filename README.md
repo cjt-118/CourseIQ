@@ -32,9 +32,7 @@ ChatGPT was used to generate the initial React frontend for the CourseIQ applica
 ![Subsystem Decomposition](images/subsystem-decomposition.drawio.png)
 ![Deployment Diagram](images/deployment-diagram.drawio.png)
 
-# CourseIQ — Sprint 4 React demo
-
-Standalone React/Vite course-discovery homepage, intended to be integrated into the team's three-tier project skeleton.
+# Frontend (React + Vite)
 
 ## Prerequisites
 - Node.js 18 or newer (Node 20 LTS recommended)
@@ -48,30 +46,31 @@ npm run dev
 ```
 Open the local URL shown in the terminal (normally http://localhost:5173).
 
-## Check that it works
-1. Search for `CS 1501` or `Smith` and verify matching results.
-2. Select `Economics` in the department filter and verify only economics courses appear.
-3. Click **View course details** to open the details dialog.
-4. Search for `xyz-not-a-course` and verify the empty-state message.
-5. Run `npm run build` to verify the production bundle builds.
+**Data source:** if `frontend/.env` defines `VITE_SUPABASE_URL` and `VITE_SUPABASE_KEY`, courses load from the Supabase `courses` table. If those variables are missing, the app falls back to the sample courses in `src/data.js` and shows a "Sample data" tag.
 
-## Integration
-- `src/App.jsx` — homepage component (presentation subsystem)
-- `src/styles.css` — styling
-- `src/data.js` — illustrative mock data; replace with backend API responses in a later sprint
-- `src/main.jsx` — Vite entry point; teammate can use `<App />` in their existing React application instead
+## Course search (US5)
+Students can narrow the course list with three filters:
+- **Department**: dropdown of every department in the catalog
+- **Professor**: text, partial match (e.g. `smith` matches "Dr. Smith")
+- **Course code**: text, partial match; spaces are optional (e.g. `cs1501` matches "CS 1501")
 
-## Works now
-- React application starts
-- Search by code, title, professor
-- Department filtering
-- Course details dialog
-- Responsive layout and empty state
+Filters can be used alone or together. When several filters are set, a course must match **all** of them. Text matching ignores case and leading/trailing spaces. Results update as you type. **Clear filters** (or clicking the CourseIQ logo) resets everything. Each result shows the course code, title, professor, and average difficulty, or "Not enough data" when the course has no reviews. If nothing matches, the page shows "No courses found".
 
-## Not implemented
-- Authentication / SSO
-- Review submission, storage, editing
-- Backend, database, live catalog data, real grade distributions
-- Actual university course or instructor information
+Code layout:
+- `src/courseSearch.js`: pure filtering and formatting functions (no React), unit-tested
+- `src/courseService.js`: loads courses (Supabase, or sample data as a fallback)
+- `src/App.jsx`: page UI (filters, results, course details dialog)
 
-All displayed data is fictional demonstration content. This is not a production application.
+## Automated tests
+```bash
+cd frontend
+npm test          # run once (Vitest)
+npm run test:watch  # re-run on file changes
+npm run build     # verify the production build
+```
+
+## Not yet implemented / limitations
+- Filtering runs in the browser over the full course list. No backend search API exists yet (`backend/` and `database/schema.sql` are still empty).
+- The search performance target (NFR5: under 500 ms with 5,000 concurrent users) has not been load-tested.
+- Authentication/SSO, review submission, and official catalog data are not implemented.
+- Sample data is fictional demonstration content.

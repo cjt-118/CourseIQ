@@ -1,51 +1,85 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { supabase } from './supabaseClient';
+import { fetchCourses } from './courseService';
+import {
+  EMPTY_FILTERS,
+  filterCourses,
+  formatDifficulty,
+  getDepartments,
+  hasActiveFilters,
+  hasDifficultyData,
+} from './courseSearch';
 import './styles.css';
 
 export default function App() {
   const [courses, setCourses] = useState([]);
+  const [source, setSource] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [query, setQuery] = useState('');
-  const [department, setDepartment] = useState('All departments');
+  const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [selected, setSelected] = useState(null);
 
   useEffect(() => {
     let ignore = false;
-    async function loadCourses() {
-      const { data, error } = await supabase
-        .from('courses')
-        .select('*')
-        .order('code');
-      if (ignore) return;
-      if (error) setError(error.message);
-      else setCourses(data);
-      setLoading(false);
-    }
-    loadCourses();
+    fetchCourses()
+      .then(result => {
+        if (ignore) return;
+        setCourses(result.courses);
+        setSource(result.source);
+      })
+      .catch(err => { if (!ignore) setError(err.message) })
+      .finally(() => { if (!ignore) setLoading(false) });
     return () => { ignore = true };
   }, []);
 
-  const departments = useMemo(
-    () => ['All departments', ...new Set(courses.map(c => c.department))],
-    [courses]
-  );
+  const departments = useMemo(() => getDepartments(courses), [courses]);
+  const filtered = useMemo(() => filterCourses(courses, filters), [courses, filters]);
 
-  const filtered = useMemo(() => courses.filter(c => {
-    const q = query.trim().toLowerCase();
-    return (department === 'All departments' || c.department === department) &&
-      [c.code, c.title, c.professor].some(value => value.toLowerCase().includes(q));
-  }), [courses, query, department]);
-  const reset = () => { setQuery(''); setDepartment('All departments'); setSelected(null) };
+  const updateFilter = name => e => setFilters(prev => ({ ...prev, [name]: e.target.value }));
+  const clearFilters = () => setFilters(EMPTY_FILTERS);
+  const reset = () => { clearFilters(); setSelected(null) };
+
   return <>
-    <header className="topbar"><div className="container nav"><button className="brand" onClick={reset} aria-label="CourseIQ home"><span className="brand-icon">▣</span> CourseIQ</button><span className="nav-label">Course Discovery · Sprint 4 Demo</span></div></header>
+    <header className="topbar"><div className="container nav"><button className="brand" onClick={reset} aria-label="CourseIQ home"><span className="brand-icon">▣</span> CourseIQ</button><span className="nav-label">Course Discovery · Sprint 5</span></div></header>
     <section className="hero"><div className="container hero-inner"><span className="eyebrow">MAKE INFORMED COURSE DECISIONS</span><h1>Find your next course.</h1><p>Explore courses, compare workload and difficulty, and discover what to expect before enrollment.</p></div></section>
-    <main className="container main"><div className="filters"><label className="field"><span>Search courses</span><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Course code, title, or professor" /></label><label className="field department"><span>Department</span><select value={department} onChange={e => setDepartment(e.target.value)}>{departments.map(d => <option key={d}>{d}</option>)}</select></label></div>
-      <div className="section-title"><div><h2>Explore courses</h2><p>{filtered.length} {filtered.length === 1 ? 'course' : 'courses'} found</p></div><span className="demo-tag">Sample data</span></div>
-      <div className="course-grid">{filtered.map(course => <article className="course-card" key={course.id}><div className="card-top"><span className="course-code">{course.code}</span><span className="rating">{course.difficulty === null ? 'No rating' : `★ ${course.difficulty.toFixed(1)} / 5 difficulty`}</span></div><h3>{course.title}</h3><p className="professor">{course.professor} · {course.department}</p><div className="stats"><div><strong>{course.workload === null ? '—' : `${course.workload.toFixed(1)}h`}</strong><span>Weekly workload</span></div><div><strong>{course.reviews}</strong><span>Student reviews</span></div></div><button className="details-button" onClick={() => setSelected(course)}>View course details <span aria-hidden="true">→</span></button></article>)}</div>
-      {filtered.length === 0 && <div className="empty"><h3>No courses found</h3><p>Try another course code, professor, or department.</p><button onClick={reset}>Clear filters</button></div>}
+    <main className="container main">
+      <form className="filters" role="search" aria-label="Search courses" onSubmit={e => e.preventDefault()}>
+        <label className="field department">
+          <span>Department</span>
+          <select value={filters.department} onChange={updateFilter('department')}>
+            {departments.map(d => <option key={d}>{d}</option>)}
+          </select>
+        </label>
+        <label className="field">
+          <span>Professor</span>
+          <input type="search" value={filters.professor} onChange={updateFilter('professor')} placeholder="e.g. Smith" />
+        </label>
+        <label className="field">
+          <span>Course code</span>
+          <input type="search" value={filters.code} onChange={updateFilter('code')} placeholder="e.g. CS 1501" />
+        </label>
+        <button type="button" className="clear-button" onClick={clearFilters} disabled={!hasActiveFilters(filters)}>Clear filters</button>
+      </form>
+
+      <div className="section-title">
+        <div><h2>Explore courses</h2><p aria-live="polite">{loading ? 'Loading courses…' : `${filtered.length} ${filtered.length === 1 ? 'course' : 'courses'} found`}</p></div>
+        {source === 'sample' && <span className="demo-tag">Sample data</span>}
+      </div>
+
+      {error && <div className="empty" role="alert"><h3>Could not load courses</h3><p>{error}</p></div>}
+
+      {!loading && !error && <>
+        <div className="course-grid">{filtered.map(course => <article className="course-card" key={course.id}>
+          <div className="card-top"><span className="course-code">{course.code}</span><span className="rating">{hasDifficultyData(course) ? `★ ${formatDifficulty(course)} difficulty` : `Difficulty: ${formatDifficulty(course)}`}</span></div>
+          <h3>{course.title}</h3>
+          <p className="professor">{course.professor} · {course.department}</p>
+          <div className="stats"><div><strong>{course.workload === null ? '—' : `${Number(course.workload).toFixed(1)}h`}</strong><span>Weekly workload</span></div><div><strong>{course.reviews}</strong><span>Student reviews</span></div></div>
+          <button className="details-button" onClick={() => setSelected(course)}>View course details <span aria-hidden="true">→</span></button>
+        </article>)}</div>
+        {filtered.length === 0 && <div className="empty"><h3>No courses found</h3><p>Try another department, professor, or course code.</p><button onClick={clearFilters}>Clear filters</button></div>}
+      </>}
+
       <p className="disclaimer">Demo only: all courses, ratings, workloads, and instructors are illustrative. No real student records or university APIs are used.</p>
     </main>
-    {selected && <div className="modal-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) setSelected(null) }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><button className="close" onClick={() => setSelected(null)} aria-label="Close details">×</button><span className="course-code">{selected.code}</span><h2 id="modal-title">{selected.title}</h2><p className="professor">{selected.professor} · {selected.department}</p><p>{selected.description}</p><div className="modal-stats"><div><strong>{selected.difficulty === null ? 'Not enough data' : `${selected.difficulty.toFixed(1)} / 5`}</strong><span>Average difficulty</span></div><div><strong>{selected.workload === null ? 'Not enough data' : `${selected.workload.toFixed(1)} hours`}</strong><span>Weekly workload</span></div><div><strong>{selected.reviews}</strong><span>Reviews</span></div></div><p className="coming-soon">Review submission and authentication are planned for later sprints.</p></section></div>}
+    {selected && <div className="modal-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) setSelected(null) }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><button className="close" onClick={() => setSelected(null)} aria-label="Close details">×</button><span className="course-code">{selected.code}</span><h2 id="modal-title">{selected.title}</h2><p className="professor">{selected.professor} · {selected.department}</p><p>{selected.description}</p><div className="modal-stats"><div><strong>{formatDifficulty(selected)}</strong><span>Average difficulty</span></div><div><strong>{selected.workload === null ? 'Not enough data' : `${Number(selected.workload).toFixed(1)} hours`}</strong><span>Weekly workload</span></div><div><strong>{selected.reviews}</strong><span>Reviews</span></div></div><p className="coming-soon">Review submission and authentication are planned for later sprints.</p></section></div>}
   </>;
 }
