@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { supabase } from './supabaseClient';
 import './styles.css';
+import CourseDetailsModal from './components/CourseDetailsModal';
 
 export default function App() {
   const [courses, setCourses] = useState([]);
@@ -46,6 +47,6 @@ export default function App() {
       {filtered.length === 0 && <div className="empty"><h3>No courses found</h3><p>Try another course code, professor, or department.</p><button onClick={reset}>Clear filters</button></div>}
       <p className="disclaimer">Demo only: all courses, ratings, workloads, and instructors are illustrative. No real student records or university APIs are used.</p>
     </main>
-    {selected && <div className="modal-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) setSelected(null) }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><button className="close" onClick={() => setSelected(null)} aria-label="Close details">×</button><span className="course-code">{selected.code}</span><h2 id="modal-title">{selected.title}</h2><p className="professor">{selected.professor} · {selected.department}</p><p>{selected.description}</p><div className="modal-stats"><div><strong>{selected.difficulty === null ? 'Not enough data' : `${selected.difficulty.toFixed(1)} / 5`}</strong><span>Average difficulty</span></div><div><strong>{selected.workload === null ? 'Not enough data' : `${selected.workload.toFixed(1)} hours`}</strong><span>Weekly workload</span></div><div><strong>{selected.reviews}</strong><span>Reviews</span></div></div><p className="coming-soon">Review submission and authentication are planned for later sprints.</p></section></div>}
+    {selected && (<CourseDetailModal course={selected} onClose={() => setSelected(null)}/>)}
   </>;
 }
