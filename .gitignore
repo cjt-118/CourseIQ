@@ -7,6 +7,13 @@ dist/
 .env
 .env.local
 .env.*.local
+backend/.env
+frontend/.env
+backend/venv/
 
 # macOS
 .DS_Store
+
+__pycache__/
+*.pyc
+.pytest_cache/
