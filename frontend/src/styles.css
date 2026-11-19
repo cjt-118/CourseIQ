@@ -550,3 +550,66 @@ COURSE DETAILS MODAL CSS
         width: 100%;
     }
 }
+
+/*
+-------------------------
+SAVE COURSE (US3)
+-------------------------
+*/
+.card-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.save-button {
+    border: 1px solid #cfd9e7;
+    border-radius: 8px;
+    background: #fff;
+    color: #245e9e;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 7px 14px;
+    white-space: nowrap;
+}
+
+.save-button:hover {
+    background: #eef5fd;
+}
+
+.save-button--saved {
+    background: #e6effa;
+    color: #1a4b7c;
+    border-color: #b3cce8;
+}
+
+.save-button--saved:hover {
+    background: #d6e7f7;
+}
+
+.saved-empty {
+    background: white;
+    border: 1px dashed #cfd9e7;
+    border-radius: 14px;
+    padding: 28px 24px;
+    color: #6c788b;
+    font-size: 14px;
+}
+
+.saved-empty p {
+    margin: 0;
+}
+
+.modal-title-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 12px 0;
+}
+
+.modal-title-row h2 {
+    margin: 0;
+    flex: 1;
+}
