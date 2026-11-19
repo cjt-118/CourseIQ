@@ -116,6 +116,33 @@ button {
     flex: 0 0 245px
 }
 
+.filters {
+    align-items: flex-end
+}
+
+.field {
+    min-width: 0
+}
+
+.clear-button {
+    flex: 0 0 auto;
+    padding: 13px 16px;
+    border: 1px solid #cfd9e7;
+    border-radius: 9px;
+    background: #fff;
+    color: #245e9e;
+    font-weight: 700
+}
+
+.clear-button:hover:not(:disabled) {
+    background: #eef5fd
+}
+
+.clear-button:disabled {
+    color: #9aa6b6;
+    cursor: default
+}
+
 .field input,
 .field select {
     width: 100%;
@@ -332,7 +359,9 @@ button {
     }
 
     .filters {
-        flex-direction: column
+        flex-direction: column;
+        align-items: stretch;
+        padding: 18px
     }
 
     .field.department {
