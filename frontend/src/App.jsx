@@ -47,6 +47,6 @@ export default function App() {
       {filtered.length === 0 && <div className="empty"><h3>No courses found</h3><p>Try another course code, professor, or department.</p><button onClick={reset}>Clear filters</button></div>}
       <p className="disclaimer">Demo only: all courses, ratings, workloads, and instructors are illustrative. No real student records or university APIs are used.</p>
     </main>
-    {selected && (<CourseDetailModal course={selected} onClose={() => setSelected(null)}/>)}
+    {selected && (<CourseDetailsModal course={selected} onClose={() => setSelected(null)}/>)}
   </>;
 }

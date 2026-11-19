@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
-function formatReviewData(isoString) {
+function formatReviewDate(isoString) {
     if (!isoString) return 'Recently';
-    const parsed = newDate(isoString);
+    const parsed = new Date(isoString);
     if (Number.isNaN(parsed.getTime())) return 'Recently';
     return parsed.toLocaleDateString('en-US', {
         year: 'numeric',
@@ -104,7 +104,7 @@ export default function CourseDetailsModal({ course, onClose }) {
 
                     {!loading && error && (<p className="reviews-error" role="alert">{error}</p>)}
 
-                    {!loading && !error && reveiws.length === 0 && (
+                    {!loading && !error && reviews.length === 0 && (
                         <div className="reviews-empty">
                             <p>No reviews yet</p>
                             <a href={`#write-review-${active.id}`} className="write-review-link" onClick={(e) => { e.preventDefault(); setShowReviewNotice(true); }}>Write a review →</a>
