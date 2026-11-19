@@ -9,6 +9,7 @@ import {
   hasDifficultyData,
 } from './courseSearch';
 import './styles.css';
+import CourseDetailsModal from './components/CourseDetailsModal';
 
 export default function App() {
   const [courses, setCourses] = useState([]);
@@ -80,6 +81,6 @@ export default function App() {
 
       <p className="disclaimer">Demo only: all courses, ratings, workloads, and instructors are illustrative. No real student records or university APIs are used.</p>
     </main>
-    {selected && <div className="modal-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) setSelected(null) }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><button className="close" onClick={() => setSelected(null)} aria-label="Close details">×</button><span className="course-code">{selected.code}</span><h2 id="modal-title">{selected.title}</h2><p className="professor">{selected.professor} · {selected.department}</p><p>{selected.description}</p><div className="modal-stats"><div><strong>{formatDifficulty(selected)}</strong><span>Average difficulty</span></div><div><strong>{selected.workload === null ? 'Not enough data' : `${Number(selected.workload).toFixed(1)} hours`}</strong><span>Weekly workload</span></div><div><strong>{selected.reviews}</strong><span>Reviews</span></div></div><p className="coming-soon">Review submission and authentication are planned for later sprints.</p></section></div>}
+    {selected && (<CourseDetailsModal course={selected} onClose={() => setSelected(null)}/>)}
   </>;
 }
