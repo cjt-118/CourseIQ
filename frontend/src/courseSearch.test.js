@@ -2,13 +2,17 @@ import { describe, expect, it } from 'vitest';
 import { courses } from './data';
 import {
   ALL_DEPARTMENTS,
+  ANY_DIFFICULTY,
   EMPTY_FILTERS,
   NOT_ENOUGH_DATA,
   filterCourses,
   formatDifficulty,
   getDepartments,
+  getDifficultyOptions,
   hasActiveFilters,
   hasDifficultyData,
+  matchesMaxDifficulty,
+  parseMaxDifficulty,
 } from './courseSearch';
 
 const search = overrides => filterCourses(courses, { ...EMPTY_FILTERS, ...overrides });
@@ -69,6 +73,83 @@ describe('filterCourses', () => {
   });
 });
 
+describe('difficulty filter', () => {
+  // Small fixture with known values so boundary cases don't depend on data.js.
+  const sample = [
+    { code: 'A 0001', department: 'Test', professor: 'X', difficulty: 2.0, reviews: 10 },
+    { code: 'B 0002', department: 'Test', professor: 'X', difficulty: 3.0, reviews: 8 },
+    { code: 'C 0003', department: 'Test', professor: 'X', difficulty: 3.04, reviews: 3 },
+    { code: 'D 0004', department: 'Test', professor: 'X', difficulty: 3.06, reviews: 3 },
+    { code: 'E 0005', department: 'Other', professor: 'Y', difficulty: 4.6, reviews: 5 },
+    { code: 'F 0006', department: 'Other', professor: 'Y', difficulty: null, reviews: 0 },
+  ];
+  const searchSample = overrides => filterCourses(sample, { ...EMPTY_FILTERS, ...overrides });
+
+  it('is inactive by default', () => {
+    expect(EMPTY_FILTERS.maxDifficulty).toBe(ANY_DIFFICULTY);
+    expect(searchSample({})).toHaveLength(sample.length);
+  });
+
+  it('keeps only courses at or below the selected level', () => {
+    expect(codes(searchSample({ maxDifficulty: '3' }))).toEqual(['A 0001', 'B 0002', 'C 0003']);
+    expect(codes(searchSample({ maxDifficulty: '2' }))).toEqual(['A 0001']);
+    expect(searchSample({ maxDifficulty: '1' })).toEqual([]);
+  });
+
+  it('includes the boundary value', () => {
+    expect(matchesMaxDifficulty(sample[1], 3)).toBe(true);
+  });
+
+  it('compares against the displayed (rounded) value', () => {
+    // 3.04 displays as "3.0 / 5", so it should pass a 3/5 filter.
+    expect(formatDifficulty(sample[2])).toBe('3.0 / 5');
+    expect(matchesMaxDifficulty(sample[2], 3)).toBe(true);
+    // 3.06 displays as "3.1 / 5", so it should not.
+    expect(formatDifficulty(sample[3])).toBe('3.1 / 5');
+    expect(matchesMaxDifficulty(sample[3], 3)).toBe(false);
+  });
+
+  it('hides courses without difficulty data while active, shows them when inactive', () => {
+    expect(codes(searchSample({ maxDifficulty: '5' }))).not.toContain('F 0006');
+    expect(codes(searchSample({ maxDifficulty: ANY_DIFFICULTY }))).toContain('F 0006');
+  });
+
+  it('accepts numbers or strings, and treats blank or invalid input as no limit', () => {
+    expect(searchSample({ maxDifficulty: 3 })).toEqual(searchSample({ maxDifficulty: '3' }));
+    expect(searchSample({ maxDifficulty: '' })).toHaveLength(sample.length);
+    expect(searchSample({ maxDifficulty: null })).toHaveLength(sample.length);
+    expect(searchSample({ maxDifficulty: 'abc' })).toHaveLength(sample.length);
+    expect(parseMaxDifficulty(' 4 ')).toBe(4);
+    expect(parseMaxDifficulty('   ')).toBeNull();
+  });
+
+  it('combines with other filters using AND logic', () => {
+    expect(codes(searchSample({ department: 'Test', maxDifficulty: '3' }))).toEqual(['A 0001', 'B 0002', 'C 0003']);
+    expect(searchSample({ department: 'Other', maxDifficulty: '3' })).toEqual([]);
+  });
+
+  it('works against the real course data', () => {
+    for (const level of [1, 2, 3, 4, 5]) {
+      const results = search({ maxDifficulty: String(level) });
+      for (const course of results) {
+        expect(hasDifficultyData(course)).toBe(true);
+        expect(Number(Number(course.difficulty).toFixed(1))).toBeLessThanOrEqual(level);
+      }
+    }
+    // CS 1501 is rated 4.2: excluded at 4/5, included at 5/5.
+    expect(codes(search({ maxDifficulty: '4' }))).not.toContain('CS 1501');
+    expect(codes(search({ maxDifficulty: '5' }))).toContain('CS 1501');
+    // PSY 0010 has no reviews, so it never appears while the filter is active.
+    expect(codes(search({ maxDifficulty: '5' }))).not.toContain('PSY 0010');
+  });
+
+  it('does not mutate the input array', () => {
+    const copy = [...sample];
+    searchSample({ maxDifficulty: '3' });
+    expect(sample).toEqual(copy);
+  });
+});
+
 describe('difficulty display', () => {
   it('shows "Not enough data" for a course without reviews', () => {
     const psy = courses.find(c => c.code === 'PSY 0010');
@@ -102,5 +183,15 @@ describe('helpers', () => {
     expect(hasActiveFilters({ ...EMPTY_FILTERS, professor: '   ' })).toBe(false);
     expect(hasActiveFilters({ ...EMPTY_FILTERS, code: 'CS' })).toBe(true);
     expect(hasActiveFilters({ ...EMPTY_FILTERS, department: 'Economics' })).toBe(true);
+    expect(hasActiveFilters({ ...EMPTY_FILTERS, maxDifficulty: '3' })).toBe(true);
+    expect(hasActiveFilters({ ...EMPTY_FILTERS, maxDifficulty: '' })).toBe(false);
+  });
+
+  it('builds difficulty dropdown options: "Any difficulty" then 1-5', () => {
+    const options = getDifficultyOptions();
+    expect(options).toHaveLength(6);
+    expect(options[0]).toEqual({ value: ANY_DIFFICULTY, label: 'Any difficulty' });
+    expect(options.slice(1).map(o => o.value)).toEqual(['1', '2', '3', '4', '5']);
+    expect(options[3].label).toBe('3 / 5 or easier');
   });
 });

@@ -5,12 +5,16 @@ import {
   filterCourses,
   formatDifficulty,
   getDepartments,
+  getDifficultyOptions,
   hasActiveFilters,
   hasDifficultyData,
 } from './courseSearch';
 import { getSavedCourseIds, saveCourse, removeCourse } from './savedCoursesService';
 import './styles.css';
 import CourseDetailsModal from './components/CourseDetailsModal';
+
+// Static list, so it's built once instead of on every render.
+const DIFFICULTY_OPTIONS = getDifficultyOptions();
 
 export default function App() {
   const [courses, setCourses] = useState([]);
@@ -68,6 +72,12 @@ export default function App() {
           <span>Course code</span>
           <input type="search" value={filters.code} onChange={updateFilter('code')} placeholder="e.g. CS 1501" />
         </label>
+        <label className="field difficulty">
+          <span>Max difficulty</span>
+          <select value={filters.maxDifficulty} onChange={updateFilter('maxDifficulty')}>
+            {DIFFICULTY_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        </label>
         <button type="button" className="clear-button" onClick={clearFilters} disabled={!hasActiveFilters(filters)}>Clear filters</button>
       </form>
 
@@ -110,7 +120,7 @@ export default function App() {
             >{savedIds.includes(course.id) ? 'Saved ✓' : 'Save'}</button>
           </div>
         </article>)}</div>
-        {filtered.length === 0 && <div className="empty"><h3>No courses found</h3><p>Try another department, professor, or course code.</p><button onClick={clearFilters}>Clear filters</button></div>}
+        {filtered.length === 0 && <div className="empty"><h3>No courses found</h3><p>Try another department, professor, course code, or a higher max difficulty.</p><button onClick={clearFilters}>Clear filters</button></div>}
       </>}
 
       <p className="disclaimer">Demo only: all courses, ratings, workloads, and instructors are illustrative. No real student records or university APIs are used.</p>
