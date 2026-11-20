@@ -13,7 +13,7 @@ function formatReviewDate(isoString) {
     });
 }
 
-export default function CourseDetailsModal({ course, onClose }) {
+export default function CourseDetailsModal({ course, onClose, savedIds = [], onToggleSave }) {
     const [details, setDetails] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -69,7 +69,16 @@ export default function CourseDetailsModal({ course, onClose }) {
             <section className="modal course-details-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
                 <button className="close" onClick={onClose} aria-label="Close details">x</button>
                 <span className="course-code">{active.code}</span>
-                <h2 id="modal-title">{active.title}</h2>
+                <div className="modal-title-row">
+                  <h2 id="modal-title">{active.title}</h2>
+                  {onToggleSave && (
+                    <button
+                      className={`save-button${savedIds.includes(active.id) ? ' save-button--saved' : ''}`}
+                      onClick={() => onToggleSave(active.id)}
+                      aria-label={savedIds.includes(active.id) ? `Remove ${active.title} from saved courses` : `Save ${active.title}`}
+                    >{savedIds.includes(active.id) ? 'Saved ✓' : 'Save'}</button>
+                  )}
+                </div>
                 <p className="professor">{active.professor} · {active.department}</p>
 
                 <div className="schedule-row">
