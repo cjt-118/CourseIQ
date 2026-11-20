@@ -8,6 +8,7 @@ import {
   hasActiveFilters,
   hasDifficultyData,
 } from './courseSearch';
+import { getSavedCourseIds, saveCourse, removeCourse } from './savedCoursesService';
 import './styles.css';
 import CourseDetailsModal from './components/CourseDetailsModal';
 
@@ -18,6 +19,7 @@ export default function App() {
   const [error, setError] = useState(null);
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [selected, setSelected] = useState(null);
+  const [savedIds, setSavedIds] = useState(() => getSavedCourseIds());
 
   useEffect(() => {
     let ignore = false;
@@ -38,6 +40,14 @@ export default function App() {
   const updateFilter = name => e => setFilters(prev => ({ ...prev, [name]: e.target.value }));
   const clearFilters = () => setFilters(EMPTY_FILTERS);
   const reset = () => { clearFilters(); setSelected(null) };
+
+  const toggleSave = (courseId) => {
+    if (savedIds.includes(courseId)) {
+      setSavedIds(removeCourse(courseId));
+    } else {
+      setSavedIds(saveCourse(courseId));
+    }
+  };
 
   return <>
     <header className="topbar"><div className="container nav"><button className="brand" onClick={reset} aria-label="CourseIQ home"><span className="brand-icon">▣</span> CourseIQ</button><span className="nav-label">Course Discovery · Sprint 5</span></div></header>
@@ -62,6 +72,23 @@ export default function App() {
       </form>
 
       <div className="section-title">
+        <div><h2>Saved Courses</h2></div>
+      </div>
+      {savedIds.length === 0
+        ? <div className="saved-empty"><p>You haven't saved any courses yet. Click <strong>Save</strong> on a course to add it here.</p></div>
+        : <div className="course-grid">{courses.filter(c => savedIds.includes(c.id)).map(course => <article className="course-card" key={course.id}>
+            <div className="card-top"><span className="course-code">{course.code}</span><span className="rating">{hasDifficultyData(course) ? `★ ${formatDifficulty(course)} difficulty` : `Difficulty: ${formatDifficulty(course)}`}</span></div>
+            <h3>{course.title}</h3>
+            <p className="professor">{course.professor} · {course.department}</p>
+            <div className="card-actions">
+              <button className="details-button" onClick={() => setSelected(course)}>View course details <span aria-hidden="true">→</span></button>
+              <button className="save-button save-button--saved" onClick={() => toggleSave(course.id)} aria-label={`Remove ${course.title} from saved courses`}>Saved ✓</button>
+            </div>
+          </article>)}
+        </div>
+      }
+
+      <div className="section-title">
         <div><h2>Explore courses</h2><p aria-live="polite">{loading ? 'Loading courses…' : `${filtered.length} ${filtered.length === 1 ? 'course' : 'courses'} found`}</p></div>
         {source === 'sample' && <span className="demo-tag">Sample data</span>}
       </div>
@@ -74,13 +101,20 @@ export default function App() {
           <h3>{course.title}</h3>
           <p className="professor">{course.professor} · {course.department}</p>
           <div className="stats"><div><strong>{course.workload === null ? '—' : `${Number(course.workload).toFixed(1)}h`}</strong><span>Weekly workload</span></div><div><strong>{course.reviews}</strong><span>Student reviews</span></div></div>
-          <button className="details-button" onClick={() => setSelected(course)}>View course details <span aria-hidden="true">→</span></button>
+          <div className="card-actions">
+            <button className="details-button" onClick={() => setSelected(course)}>View course details <span aria-hidden="true">→</span></button>
+            <button
+              className={`save-button${savedIds.includes(course.id) ? ' save-button--saved' : ''}`}
+              onClick={() => toggleSave(course.id)}
+              aria-label={savedIds.includes(course.id) ? `Remove ${course.title} from saved courses` : `Save ${course.title}`}
+            >{savedIds.includes(course.id) ? 'Saved ✓' : 'Save'}</button>
+          </div>
         </article>)}</div>
         {filtered.length === 0 && <div className="empty"><h3>No courses found</h3><p>Try another department, professor, or course code.</p><button onClick={clearFilters}>Clear filters</button></div>}
       </>}
 
       <p className="disclaimer">Demo only: all courses, ratings, workloads, and instructors are illustrative. No real student records or university APIs are used.</p>
     </main>
-    {selected && (<CourseDetailsModal course={selected} onClose={() => setSelected(null)}/>)}
+    {selected && (<CourseDetailsModal course={selected} onClose={() => setSelected(null)} savedIds={savedIds} onToggleSave={toggleSave}/>)}
   </>;
 }
