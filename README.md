@@ -113,6 +113,7 @@ python3 -m venv venv
 source venv/bin/activate      # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 python app.py
+```
 
 ## Not yet implemented / limitations
 - Course search filtering runs in the browser over the full course list. No backend search API exists yet (the Flask backend in `backend/` and PostgreSQL schema in `database/schema.sql` currently serve course details and reviews via `GET /api/courses/<id>`).
