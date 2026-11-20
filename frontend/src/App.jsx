@@ -88,6 +88,13 @@ export default function App() {
         </div>
       }
 
+       <div className="section-title">
+        <div><h2>My Ratings</h2></div>
+      </div>
+      <div className="saved-empty">
+        <p>You haven't rated any courses yet. Courses you rate will appear here.</p>
+      </div>
+
       <div className="section-title">
         <div><h2>Explore courses</h2><p aria-live="polite">{loading ? 'Loading courses…' : `${filtered.length} ${filtered.length === 1 ? 'course' : 'courses'} found`}</p></div>
         {source === 'sample' && <span className="demo-tag">Sample data</span>}
