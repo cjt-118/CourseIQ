@@ -113,6 +113,8 @@ python3 -m venv venv
 source venv/bin/activate      # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 python app.py
+```
+
 ## Save a course (US3)
 
 Students can save courses they are considering and view them in a **Saved Courses** section at the top of the page.
