@@ -46,7 +46,12 @@ npm run dev
 ```
 Open the local URL shown in the terminal (normally http://localhost:5173).
 
-**Data source:** if `frontend/.env` defines `VITE_SUPABASE_URL` and `VITE_SUPABASE_KEY`, courses load from the Supabase `courses` table. If those variables are missing, the app falls back to the sample courses in `src/data.js` and shows a "Sample data" tag.
+**Data source & environment variables (`frontend/.env`):** 
+- `VITE_SUPABASE_URL`: Base Supabase project URL (without `/rest/v1`).
+- `VITE_SUPABASE_KEY`: Supabase public `anon` key.
+- `VITE_API_URL` *(optional)*: Base URL for the Flask backend used by Course Details (defaults to `http://localhost:5001`).
+
+If `VITE_SUPABASE_URL` and `VITE_SUPABASE_KEY` are defined in `frontend/.env`, courses load from the Supabase `courses` table; otherwise, the app falls back to the sample courses in `src/data.js` and shows a "Sample data" tag.
 
 ## Course search (US5)
 Students can narrow the course list with three filters:
@@ -61,6 +66,27 @@ Code layout:
 - `src/courseService.js`: loads courses (Supabase, or sample data as a fallback)
 - `src/App.jsx`: page UI (filters, results, course details dialog)
 
+## View course details (US6)
+Students can inspect detailed information and anonymous written reviews for any course in the catalog.
+
+**What it does:**
+- Fetches live course details and reviews from the Flask backend (`GET /api/courses/<id>`) backed by Supabase PostgreSQL.
+- Displays the course code, title, professor, department, course description, scheduled meeting times, average difficulty, weekly workload, and total review count.
+- Lists written student reviews sorted **newest first** while stripping all reviewer names and identifying fields (FERPA / C1).
+- Displays `"No reviews yet"` with a `"Write a review"` link when a course has zero written reviews.
+- Scales cleanly down to a `375px` mobile viewport width with no horizontal scrolling (NFR4).
+
+**How to use it:**
+1. Start both the Flask backend (`http://localhost:5001`) and the React frontend (`http://localhost: 5173`).
+2. Click **View course details** on any course card (for example, **CS 1501** to view populated reviews sorted newest first, or **PSY 0010** to view the `"No reviews yet"` empty state).
+3. Close the dialog by clicking `x`, clicking outside the modal, or pressing `Esc`.
+
+Code layout:
+- `frontend/src/components/CourseDetailsModal.jsx`: course details modal UI and Flask API fetch
+- `backend/course_catalog/routes.py`: `GET /api/courses/<course_id>` endpoint
+- `backend/course_catalog/service.py`: PostgreSQL queries, newest-first review sorting, and reviewer field sanitization
+- `database/schema.sql`: PostgreSQL schema for `courses` and `course_reviews`
+
 ## Automated tests
 ```bash
 cd frontend
@@ -69,6 +95,24 @@ npm run test:watch  # re-run on file changes
 npm run build     # verify the production build
 ```
 
+# Backend (Flask + PostgreSQL)
+
+## Prerequisites
+- Python 3.10 or newer
+- `pip`
+
+## Environment variables
+Copy `backend/.env.example` to `backend/.env` and set:
+- `DATABASE_URL`: Supabase Session Pooler PostgreSQL connection URI (URL-encode special characters in the password, e.g. `%` → `%25`, `!` → `%21`).
+- `PORT` *(optional)*: Port for the Flask server (defaults to `5001` to avoid macOS AirPlay conflicts on port `5000`).
+
+## Run locally
+```bash
+cd backend
+python3 -m venv venv
+source venv/bin/activate      # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+python app.py
 ## Save a course (US3)
 
 Students can save courses they are considering and view them in a **Saved Courses** section at the top of the page.
@@ -114,7 +158,7 @@ CREATE POLICY "Users can delete their own saved courses"
 ```
 
 ## Not yet implemented / limitations
-- Filtering runs in the browser over the full course list. No backend search API exists yet (`backend/` and `database/schema.sql` are still empty).
+- Course search filtering runs in the browser over the full course list. No backend search API exists yet (the Flask backend in `backend/` and PostgreSQL schema in `database/schema.sql` currently serve course details and reviews via `GET /api/courses/<id>`).
 - The search performance target (NFR5: under 500 ms with 5,000 concurrent users) has not been load-tested.
 - Authentication/SSO, review submission, and official catalog data are not implemented.
 - Saved course persistence across logout/login (US3 AC7) requires authentication (US1) to be completed first.
